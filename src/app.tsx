@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { loadConfig, type RigConfig } from './config.js';
+import { readNight } from './digest/read.js';
 import { lane } from './lane.js';
 import { readStatus } from './status.js';
+import { Digest } from './views/digest.js';
 import { Layout } from './views/layout.js';
 import { StatusBoard } from './views/status.js';
 
@@ -17,6 +19,26 @@ export function createApp(config: RigConfig = loadConfig()) {
       </Layout>,
     ),
   );
+
+  const night = (c: { req: { param: (k: string) => string } }) => {
+    const n = c.req.param('night');
+    return /^\d{4}-\d{2}-\d{2}$/.test(n) ? { n, data: readNight(config.runsDir, n) } : { n, data: null };
+  };
+
+  app.get('/digest/:night', (c) => {
+    const { n, data } = night(c);
+    if (!data) return c.text('no such night', 404);
+    return c.html(
+      <Layout title={`digest ${n}`} lane={lane()}>
+        <Digest night={n} data={data} />
+      </Layout>,
+    );
+  });
+
+  app.get('/api/digest/:night', (c) => {
+    const { data } = night(c);
+    return data ? c.json(data.rows) : c.json({ error: 'no such night' }, 404);
+  });
 
   return app;
 }
