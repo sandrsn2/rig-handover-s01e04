@@ -13,7 +13,8 @@ export type DigestRow = {
   lastAt: string;
 };
 
-export type Night = { rows: DigestRow[]; badLines: number };
+// counts: log lines by status, over the whole night.
+export type Night = { rows: DigestRow[]; badLines: number; counts: Record<RunStatus, number> };
 
 // Returns null when runs/<night>.jsonl does not exist.
 export type ReadNight = (runsDir: string, night: string) => Night | null;
